@@ -355,8 +355,7 @@ function checkPwd(){clearTimeout(pwdTimer);pwdTimer=setTimeout(hidePwdInput,6000
 function openPanel(){$('overlay').classList.add('open')}
 function closePanel(){$('overlay').classList.remove('open')}
 function overlayClick(e){if(e.target===$('overlay'))closePanel()}
-var noticeTimer=null;
-function startNotice(text,speed){
+var noticeTimer=null;function startNotice(text,speed){
   var nt=$('noticeText');if(!nt)return;
   nt.textContent='';nt.style.animation='none';if(noticeTimer)clearInterval(noticeTimer);
   var chars=text.split(''),idx=0;
@@ -382,7 +381,8 @@ function loadLocal(){
   try{var s=localStorage.getItem('jdAdj4');if(s){var d=JSON.parse(s);KEYS.forEach(function(k){if(d[k]){adj[k].mode=d[k].mode||'fix';adj[k].pct=d[k].pct||0;adj[k].fix=d[k].fix!==undefined?d[k].fix:0;}});}}catch(e){}
   KEYS.forEach(function(k){$('sp-'+k).value=adj[k].pct;$('sf-'+k).value=adj[k].fix;setMode(k,adj[k].mode,true);refreshValUI(k);});
 }
-function saveToGithub(){ var tip=$('syncTip');tip.className='pp-sync ing';tip.textContent='同步中...';
+function saveToGithub(){
+  var tip=$('syncTip');tip.className='pp-sync ing';tip.textContent='同步中...';
   var noticeVal=$('noticeInput')?$('noticeInput').value.trim():'';
   var noticeSpeed=$('noticeSpeed')?parseInt($('noticeSpeed').value):25;
   var p1=fetch(FB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(adj)}).then(function(r){return r.json();});
@@ -395,8 +395,7 @@ function saveToGithub(){ var tip=$('syncTip');tip.className='pp-sync ing';tip.te
       setTimeout(function(){tip.textContent=''},4000);
     }else{tip.className='pp-sync err';tip.textContent='✗ 同步失败';}
   }).catch(function(){tip.className='pp-sync err';tip.textContent='✗ 网络错误';try{localStorage.setItem('jdAdj4',JSON.stringify(adj));}catch(e){});
-}
-function setMode(key,mode,silent){
+}function setMode(key,mode,silent){
   adj[key].mode=mode;
   $('mt-pct-'+key).className='pp-mode-tab'+(mode==='pct'?' active':'');
   $('mt-fix-'+key).className='pp-mode-tab'+(mode==='fix'?' active':'');
@@ -419,7 +418,8 @@ function onSlideFix(key){adj[key].fix=parseFloat($('sf-'+key).value)||0;refreshV
 function stepFix(key,d){var cfg={gold:{min:-500,max:200},silver:{min:-50,max:20},platinum:{min:-500,max:200},palladium:{min:-500,max:200}};var nv=Math.min(cfg[key].max,Math.max(cfg[key].min,Math.round((adj[key].fix+d)*10)/10));adj[key].fix=nv;$('sf-'+key).value=nv;refreshValUI(key);if(lastPrice[key])renderCard(key,lastPrice[key]);}
 function resetOne(key){adj[key].pct=0;adj[key].fix=0;$('sp-'+key).value=0;$('sf-'+key).value=0;refreshValUI(key);if(lastPrice[key])renderCard(key,lastPrice[key]);}
 function renderCard(key,base){
-  if(!base)return; var cny=applyAdj(base,key),pEl=$('p-'+key),old=prev[key];
+  if(!base)return;
+  var cny=applyAdj(base,key),pEl=$('p-'+key),old=prev[key];
   var dir=old===undefined?'neu':cny>old?'up':cny<old?'down':'neu';
   pEl.textContent=cny.toFixed(2);pEl.className='price-cny '+dir;
   var col=$('col-'+key);col.classList.remove('fu','fd');void col.offsetWidth;
@@ -428,8 +428,7 @@ function renderCard(key,base){
     $('chg-'+key).textContent=(chg>=0?'▲ ':'▼ ')+sign+chg.toFixed(2)+' ('+sign+pct.toFixed(2)+'%)';
     $('chg-'+key).className='chg '+(chg>0?'up':chg<0?'down':'neu');}
   refreshValUI(key);pushChartPoint(key,cny);prev[key]=cny;
-}
-function pushChartPoint(key,cny){
+}function pushChartPoint(key,cny){
   var now=Date.now();chartCounters[key]++;
   HIST[key].m5.push({t:now,v:cny});if(HIST[key].m5.length>150)HIST[key].m5.shift();
   if(chartCounters[key]%8===0){HIST[key].m15.push({t:now,v:cny});if(HIST[key].m15.length>80)HIST[key].m15.shift();}
@@ -482,28 +481,25 @@ function drawChart(key){var canvas=$('cv-'+key);if(!canvas)return;
   drawDot(maxIdx,'rgba(232,208,128,0.7)','H:'+vals[maxIdx].toFixed(1));
   drawDot(minIdx,'rgba(160,140,100,0.6)','L:'+vals[minIdx].toFixed(1));
 }window.addEventListener('resize',function(){KEYS.forEach(function(k){drawChart(k)})});
-function fetchPrices(){
-  if(fetching)return;fetching=true;
-  fetch(API_URL+'?t='+Date.now())
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(d&&d['黄金']){
-        lastPrice['gold']=parseFloat(d['黄金']);
-        lastPrice['silver']=parseFloat(d['白银']);
-        lastPrice['platinum']=parseFloat(d['铂金']);
-        lastPrice['palladium']=parseFloat(d['钯金']);
-        KEYS.forEach(function(k){if(lastPrice[k])renderCard(k,lastPrice[k]);});
-        setStatus('live','实时更新中');
-        $('lupd').textContent=new Date().toLocaleTimeString('zh-CN',{hour12:false});
-      }else{setStatus('err','数据异常');}
-      fetching=false;
-    })
-    .catch(function(){setStatus('err','连接失败');fetching=false;});
+async function loadPrice(){
+  try{
+    const res = await fetch('https://price-live.a1269136698a.workers.dev/');
+    const data = await res.json();
+    if(data&&data['黄金']){
+      lastPrice['gold']=parseFloat(data['黄金']);
+      lastPrice['silver']=parseFloat(data['白银']);
+      lastPrice['platinum']=parseFloat(data['铂金']);
+      lastPrice['palladium']=parseFloat(data['钯金']);
+      KEYS.forEach(function(k){if(lastPrice[k])renderCard(k,lastPrice[k]);});
+      setStatus('live','实时更新中');
+      $('lupd').textContent=new Date().toLocaleTimeString('zh-CN',{hour12:false});
+    }
+  }catch(e){setStatus('err','连接失败');}
 }
 loadFromGithub();
-setInterval(function(){loadFromGithub();},300000);
-fetchPrices();
-setInterval(fetchPrices,2000);
+setInterval(loadFromGithub, 300000);
+loadPrice();
+setInterval(loadPrice, 3000);
 </script>
 </body>
 </html>
