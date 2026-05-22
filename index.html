@@ -498,7 +498,7 @@ async function loadPrice(){
 }
 loadPrice();
 setInterval(loadPrice, 3000);
-loadFromGithub();
+setTimeout(loadFromGithub, 2000);
 setInterval(loadFromGithub, 300000);
 </script>
 </body>
