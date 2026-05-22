@@ -496,10 +496,10 @@ async function loadPrice(){
     }
   }catch(e){setStatus('err','连接失败');}
 }
-loadFromGithub();
-setInterval(loadFromGithub, 300000);
 loadPrice();
 setInterval(loadPrice, 3000);
+loadFromGithub();
+setInterval(loadFromGithub, 300000);
 </script>
 </body>
 </html>
